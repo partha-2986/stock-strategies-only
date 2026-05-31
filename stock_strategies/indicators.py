@@ -85,3 +85,29 @@ def tech_score_at(row: pd.Series, params: dict | None = None) -> dict:
             score += max_per * 0.4
 
     return {"score": int(round(score)), "signals": signals}
+
+    if (
+        use_bb
+        and pd.notna(row["bb_lower"])
+        and pd.notna(row["bb_mid"])
+        and pd.notna(row["bb_upper"])
+    ):
+        bb_score = 0
+
+        # 1. 跌破下軌後重新站回下軌附近：反轉訊號
+        dist_lower = (row["close"] - row["bb_lower"]) / row["bb_lower"]
+
+        if 0 < dist_lower < 0.03:
+            bb_score = max(bb_score, max_per * 0.8)
+            signals.append("布林下軌反彈")
+
+        # 2. 站上中軌：偏多訊號
+        if row["close"] > row["bb_mid"]:
+            bb_score = max(bb_score, max_per * 0.4)
+
+        # 3. 突破上軌：動能訊號
+        if row["close"] > row["bb_upper"]:
+            bb_score = max(bb_score, max_per)
+            signals.append("布林上軌突破")
+
+        score += bb_score

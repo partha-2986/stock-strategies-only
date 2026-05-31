@@ -9,15 +9,27 @@ from .config import CONFIG, TELEGRAM_API
 
 
 def send_telegram(text: str):
-    url = TELEGRAM_API.format(token=os.environ["TELEGRAM_BOT_TOKEN"])
-    payload = {
-        "chat_id": os.environ["TELEGRAM_CHAT_ID"],
-        "text": text,
-        "parse_mode": "Markdown",
+    url = "https://api.line.me/v2/bot/message/push"
+
+    headers = {
+        "Authorization": f"Bearer {os.environ['LINE_CHANNEL_ACCESS_TOKEN']}",
+        "Content-Type": "application/json",
     }
-    r = requests.post(url, json=payload, timeout=10)
+
+    payload = {
+        "to": os.environ["LINE_USER_ID"],
+        "messages": [
+            {
+                "type": "text",
+                "text": text[:5000],
+            }
+        ],
+    }
+
+    r = requests.post(url, headers=headers, json=payload, timeout=10)
+
     if not r.ok:
-        print(f"Telegram 送失敗: {r.text}", file=sys.stderr)
+        print(f"LINE 送失敗: {r.text}", file=sys.stderr)
 
 
 def _trend_emoji(chg: float) -> str:

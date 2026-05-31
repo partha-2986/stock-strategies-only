@@ -40,8 +40,8 @@ _PARAM_DEFAULTS: dict = {
     "target_return": CONFIG["target_return"],
     "stop_loss": CONFIG["stop_loss"],
     # 評分加權
-    "weight_fundamental": 0.3,
-    "weight_technical": 0.3,
+    "weight_fundamental": 0.1,
+    "weight_technical": 0.5,
     "weight_backtest": 0.4,
     "min_total_score_for_buy": CONFIG["min_total_score_for_buy"],
     "min_tech_score_for_buy": 50,
@@ -95,8 +95,8 @@ def merge_params(strategy: Optional[dict]) -> dict:
         + merged["weight_backtest"]
     )
     if total <= 0:
-        merged["weight_fundamental"] = 0.3
-        merged["weight_technical"] = 0.3
+        merged["weight_fundamental"] = 0.1
+        merged["weight_technical"] = 0.5
         merged["weight_backtest"] = 0.4
     return merged
 

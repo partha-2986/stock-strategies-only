@@ -9,5 +9,5 @@ CONFIG = {
     "target_return": 0.10,
     "stop_loss": 0.08,
     "min_tech_score_for_signal": 60,
-    "min_total_score_for_buy": 65,
+    "min_total_score_for_buy": 60,
 }

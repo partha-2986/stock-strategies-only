@@ -6,15 +6,28 @@ from google.oauth2.service_account import Credentials
 
 
 def get_gsheet():
-    creds_json = os.environ["GOOGLE_CREDS_JSON"]
-    creds_dict = json.loads(creds_json)
     scopes = [
         "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive",
     ]
-    creds = Credentials.from_service_account_info(creds_dict, scopes=scopes)
+
+    with open(
+        r"C:\Users\葉尾\Downloads\stockbot-498005-e6460537ecfe.json",
+        "r",
+        encoding="utf-8",
+    ) as f:
+        creds_dict = json.load(f)
+
+    creds = Credentials.from_service_account_info(
+        creds_dict,
+        scopes=scopes
+    )
+
     gc = gspread.authorize(creds)
-    return gc.open_by_key(os.environ["GOOGLE_SHEET_ID"])
+
+    return gc.open_by_key(
+        os.environ["GOOGLE_SHEET_ID"]
+    )
 
 
 def read_watchlist() -> list[dict]:
@@ -193,3 +206,38 @@ def write_performance(records: list[dict]):
 
     rows = [[r.get(h, "") for h in PERFORMANCE_HEADERS] for r in records]
     ws.append_rows(rows)
+
+def replace_watchlist(stocks: list[dict]):
+    """
+    完全覆蓋 Watchlist
+    stocks:
+    [
+        {"stock_id":"2330","name":"台積電"},
+        ...
+    ]
+    """
+
+    sh = get_gsheet()
+    ws = sh.worksheet("Watchlist")
+
+    ws.clear()
+
+    ws.append_row([
+        "stock_id",
+        "name",
+        "category",
+        "enabled"
+    ])
+
+    rows = []
+
+    for s in stocks:
+        rows.append([
+            s["stock_id"],
+            s.get("name", ""),
+            "AutoVolume",
+            "TRUE"
+        ])
+
+    if rows:
+        ws.append_rows(rows)
