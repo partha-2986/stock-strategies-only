@@ -26,3 +26,38 @@ def get_gsheet():
     return gc.open_by_key(
         os.environ["GOOGLE_SHEET_ID"]
     )
+
+def replace_watchlist(stocks: list[dict]):
+    """
+    完全覆蓋 Watchlist
+    stocks:
+    [
+        {"stock_id":"2330","name":"台積電","category":"AI"},
+        ...
+    ]
+    """
+
+    sh = get_gsheet()
+    ws = sh.worksheet("Watchlist")
+
+    ws.clear()
+
+    ws.append_row([
+        "stock_id",
+        "name",
+        "category",
+        "enabled"
+    ])
+
+    rows = []
+
+    for s in stocks:
+        rows.append([
+            s["stock_id"],
+            s.get("name", ""),
+            s.get("category", "AutoVolume"),
+            "TRUE"
+        ])
+
+    if rows:
+        ws.append_rows(rows)
