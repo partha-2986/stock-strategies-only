@@ -74,6 +74,24 @@ def detect_patterns(df: pd.DataFrame, idx: int = -1) -> dict:
                     f"連續 3 日量能 {int(v1)}/{int(v2)}/{int(v3)} 高度一致，多空平衡蓄力中"
                 )
 
+    # 創高放量：收盤突破近 60 日高點，且量大於 20 日均量 1.5 倍
+    if idx >= 60:
+        high_60 = float(high.iloc[idx - 60:idx].max())
+        if vol_20ma > 0 and close.iloc[idx] > high_60 and vol_today >= 1.5 * vol_20ma:
+            patterns.append("創高放量")
+            bonus += 20
+            details["創高放量"] = f"收盤突破60日高點，量為20日均量 {vol_today/vol_20ma:.1f}x"
+
+    # 動能轉強：5 日漲幅 > 8%，且量大於 20 日均量 1.2 倍
+    if idx >= 5:
+        close_5d_ago = float(close.iloc[idx - 5])
+        if close_5d_ago > 0:
+            chg_5d = close.iloc[idx] / close_5d_ago - 1
+            if vol_20ma > 0 and chg_5d > 0.08 and vol_today >= 1.2 * vol_20ma:
+                patterns.append("動能轉強")
+                bonus += 15
+                details["動能轉強"] = f"5日漲幅 {chg_5d*100:.1f}%，量為20日均量 {vol_today/vol_20ma:.1f}x"
+
     # 放量滯漲：放量但 K 線差（收黑 / 長上影 / 漲幅微弱）
     vol_5ma = float(vol.iloc[max(0, idx - 5):idx].mean())
     if vol_5ma > 0 and vol_today >= 1.5 * vol_5ma:
@@ -101,6 +119,10 @@ def verdict(patterns: list[str]) -> str:
     """根據偵測到的量能型態給出結論"""
     if "放量滯漲" in patterns:
         return "⚠️ 高檔爆量疑似出貨，持有者應考慮砍半鎖利"
+    if "創高放量" in patterns:
+        return "🚀 創高放量，短線動能明顯轉強"
+    if "動能轉強" in patterns:
+        return "🔥 近5日價量同步轉強，留意短線續攻"
     if "倍量柱" in patterns and "梯量柱" in patterns:
         return "🟢 A軌動能突破成立，主力積極進場"
     if "倍量柱" in patterns:

@@ -1,33 +1,37 @@
-name: V3 Daily Signal
+name: Daily Stock Bot
 
 on:
   schedule:
-    # 台灣時間 14:30 = UTC 06:30 (台股收盤後)
-    - cron: '30 6 * * 1-5'
-  workflow_dispatch:  # 允許手動觸發測試
+    - cron: "30 6 * * 1-5"  # 台灣時間 14:30
+  workflow_dispatch:
 
 jobs:
-  run-signal:
+  run:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v4
-        with:
-          python-version: '3.11'
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-      - name: Install deps
+      - name: Install dependencies
         run: uv sync
 
-      - name: Run signal engine
+      - name: Run update watchlist
+        run: uv run python update_watchlist.py
         env:
           FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
           GOOGLE_CREDS_JSON: ${{ secrets.GOOGLE_CREDS_JSON }}
+
+      - name: Run stock bot
         run: uv run python main.py
+        env:
+          FINMIND_TOKEN: ${{ secrets.FINMIND_TOKEN }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GOOGLE_CREDS_JSON: ${{ secrets.GOOGLE_CREDS_JSON }}
+          TELEGRAM_BOT_TOKEN: test
+          TELEGRAM_CHAT_ID: test
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+          LINE_USER_ID: ${{ secrets.LINE_USER_ID }}
