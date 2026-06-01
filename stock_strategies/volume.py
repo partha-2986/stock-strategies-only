@@ -92,6 +92,16 @@ def detect_patterns(df: pd.DataFrame, idx: int = -1) -> dict:
                 bonus += 15
                 details["動能轉強"] = f"5日漲幅 {chg_5d*100:.1f}%，量為20日均量 {vol_today/vol_20ma:.1f}x"
 
+    # 強勢回檔：距60日高點回檔5%~15%，可能是主升段洗盤
+    if idx >= 60:
+        high_60 = float(high.iloc[idx - 60:idx].max())
+        if high_60 > 0:
+            pullback = (high_60 - float(close.iloc[idx])) / high_60
+            if 0.05 <= pullback <= 0.15:
+                patterns.append("強勢回檔")
+                bonus += 15
+                details["強勢回檔"] = f"距60日高點回檔 {pullback*100:.1f}%"
+
     # 放量滯漲：放量但 K 線差（收黑 / 長上影 / 漲幅微弱）
     vol_5ma = float(vol.iloc[max(0, idx - 5):idx].mean())
     if vol_5ma > 0 and vol_today >= 1.5 * vol_5ma:
@@ -119,6 +129,8 @@ def verdict(patterns: list[str]) -> str:
     """根據偵測到的量能型態給出結論"""
     if "放量滯漲" in patterns:
         return "⚠️ 高檔爆量疑似出貨，持有者應考慮砍半鎖利"
+    if "強勢回檔" in patterns:
+        return "🟡 主升段回檔5~15%，若量能未退可觀察第二波"
     if "創高放量" in patterns:
         return "🚀 創高放量，短線動能明顯轉強"
     if "動能轉強" in patterns:
