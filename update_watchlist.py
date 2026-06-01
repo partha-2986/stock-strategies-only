@@ -42,7 +42,7 @@ def fetch_twse():
         if not re.match(r"^\d{4}$", sid):
             continue
 
-                turnover = to_number(
+        turnover = to_number(
             r.get("TradeValue")
             or r.get("TradingValue")
             or r.get("成交金額")
@@ -90,7 +90,7 @@ def fetch_tpex():
         if not re.match(r"^\d{4}$", sid):
             continue
 
-                turnover = to_number(
+        turnover = to_number(
             r.get("TransactionAmount")
             or r.get("TradeValue")
             or r.get("成交金額")
