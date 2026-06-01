@@ -126,3 +126,33 @@ def write_performance(records: list[dict]):
 
     rows = [[r.get(h, "") for h in PERFORMANCE_HEADERS] for r in records]
     ws.append_rows(rows)
+
+def replace_watchlist(stocks: list[dict]):
+    """
+    完全覆蓋 Watchlist
+    """
+
+    sh = get_gsheet()
+    ws = sh.worksheet("Watchlist")
+
+    ws.clear()
+
+    ws.append_row([
+        "stock_id",
+        "name",
+        "category",
+        "enabled"
+    ])
+
+    rows = []
+
+    for s in stocks:
+        rows.append([
+            s["stock_id"],
+            s.get("name", ""),
+            s.get("category", "AutoVolume"),
+            "TRUE"
+        ])
+
+    if rows:
+        ws.append_rows(rows)
