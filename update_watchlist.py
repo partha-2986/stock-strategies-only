@@ -42,10 +42,16 @@ def fetch_twse():
         if not re.match(r"^\d{4}$", sid):
             continue
 
-        turnover = to_number(
+                turnover = to_number(
             r.get("TradeValue")
             or r.get("TradingValue")
             or r.get("成交金額")
+        )
+
+        volume = to_number(
+            r.get("TradeVolume")
+            or r.get("TradingVolume")
+            or r.get("成交股數")
         )
 
         if turnover <= 0:
@@ -56,6 +62,7 @@ def fetch_twse():
             "name": name,
             "category": "上市成交額前100",
             "turnover": turnover,
+            "volume": volume,
         })
 
     return rows
@@ -83,10 +90,16 @@ def fetch_tpex():
         if not re.match(r"^\d{4}$", sid):
             continue
 
-        turnover = to_number(
+                turnover = to_number(
             r.get("TransactionAmount")
             or r.get("TradeValue")
             or r.get("成交金額")
+        )
+
+        volume = to_number(
+            r.get("TransactionVolume")
+            or r.get("TradeVolume")
+            or r.get("成交股數")
         )
 
         if turnover <= 0:
@@ -97,10 +110,35 @@ def fetch_tpex():
             "name": name,
             "category": "上櫃成交額前100",
             "turnover": turnover,
+            "volume": volume,
         })
 
     return rows
 
+def is_volume_spike(stock_id):
+    """
+    判斷今日成交量是否大於20日均量2倍
+    """
+    try:
+        px = get_price_history(stock_id, years=1)
+    except TypeError:
+        px = get_price_history(stock_id, 1)
+    except Exception:
+        return False
+
+    if px is None or len(px) < 21:
+        return False
+
+    px = px.sort_values("date").copy()
+    px["volume"] = pd.to_numeric(px["volume"], errors="coerce")
+
+    vol_today = px["volume"].iloc[-1]
+    vol20 = px["volume"].iloc[-21:-1].mean()
+
+    if pd.isna(vol_today) or pd.isna(vol20) or vol20 <= 0:
+        return False
+
+    return vol_today >= 2 * vol20
 
 def pass_ma20_and_not_overheated(stock_id):
     try:
@@ -125,9 +163,17 @@ def pass_ma20_and_not_overheated(stock_id):
         return False
 
     above_ma20 = last["close"] > last["ma20"]
+
+    high60 = px["high"].iloc[-60:].max()
+    pullback = (high60 - last["close"]) / high60
+
+    # 強勢股回檔
+    if 0.05 <= pullback <= 0.15:
+         return True
+
     chg20 = last["close"] / prev20["close"] - 1
 
-    return above_ma20 and chg20 <= 0.30
+         return above_ma20 and chg20 <= 0.30
 
 
 def build_watchlist():
@@ -152,14 +198,39 @@ def build_watchlist():
         reverse=True
     )[:100]
 
-    print(f"成交額前100已取得，開始過濾 MA20 與 20日漲幅...")
+    print("成交額前100已取得，開始尋找量能爆發股...")
+
+    volume_spikes = []
+
+    for i, s in enumerate(all_rows, 1):
+        sid = s["stock_id"]
+        name = s["name"]
+
+        if is_volume_spike(sid):
+            s = dict(s)
+            s["category"] = s["category"] + "+量能爆發"
+            volume_spikes.append(s)
+            print(f"量能爆發：{sid} {name}")
+
+    # 合併：成交額前100 + 量能爆發股，並去除重複
+    merged = {}
+    for s in top100 + volume_spikes:
+        sid = s["stock_id"]
+        if sid not in merged:
+            merged[sid] = s
+        else:
+            merged[sid]["category"] = merged[sid]["category"] + "+量能爆發"
+
+    candidates = list(merged.values())
+
+    print(f"候選股票共 {len(candidates)} 檔，開始過濾 MA20 與 20日漲幅...")
 
     result = []
 
-    for i, s in enumerate(top100, 1):
+    for i, s in enumerate(candidates, 1):
         sid = s["stock_id"]
         name = s["name"]
-        print(f"[{i}/100] 檢查 {sid} {name}")
+        print(f"[{i}/{len(candidates)}] 檢查 {sid} {name}")
 
         if pass_ma20_and_not_overheated(sid):
             result.append({
