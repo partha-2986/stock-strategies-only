@@ -149,32 +149,49 @@ def pass_ma20_and_not_overheated(stock_id):
         print(f"略過 {stock_id}: 抓歷史價格失敗 {e}")
         return False
 
-    if px is None or len(px) < 21:
+    if px is None or len(px) < 60:
         return False
 
     px = px.sort_values("date").copy()
+
     px["close"] = pd.to_numeric(px["close"], errors="coerce")
+    px["high"] = pd.to_numeric(px["high"], errors="coerce")
+
     px["ma20"] = px["close"].rolling(20).mean()
 
     last = px.iloc[-1]
     prev20 = px.iloc[-21]
 
-    if pd.isna(last["ma20"]) or pd.isna(last["close"]) or pd.isna(prev20["close"]):
+    if (
+        pd.isna(last["close"])
+        or pd.isna(last["ma20"])
+        or pd.isna(prev20["close"])
+    ):
         return False
 
     above_ma20 = last["close"] > last["ma20"]
 
-    high60 = px["high"].iloc[-60:].max()
-    pullback = (high60 - last["close"]) / high60
-
-    # 強勢股回檔
-    if 0.05 <= pullback <= 0.15:
-         return True
-
+    # ===== 軌道 A =====
     chg20 = last["close"] / prev20["close"] - 1
 
-         return above_ma20 and chg20 <= 0.30
+    normal_momentum = (
+        above_ma20
+        and chg20 <= 0.30
+    )
 
+    # ===== 軌道 B =====
+    high60 = px["high"].iloc[-60:].max()
+
+    pullback = (
+        high60 - last["close"]
+    ) / high60
+
+    strong_pullback = (
+        above_ma20
+        and 0.05 <= pullback <= 0.15
+    )
+
+    return normal_momentum or strong_pullback
 
 def build_watchlist():
     print("抓上市成交額資料...")
