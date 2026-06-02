@@ -9,7 +9,7 @@ from .config import CONFIG, TELEGRAM_API
 
 
 def send_telegram(text: str):
-    url = "https://api.line.me/v2/bot/message/push"
+    url = "https://api.line.me/v2/bot/message/broadcast"
 
     headers = {
         "Authorization": f"Bearer {os.environ['LINE_CHANNEL_ACCESS_TOKEN']}",
@@ -17,7 +17,6 @@ def send_telegram(text: str):
     }
 
     payload = {
-        "to": os.environ["LINE_USER_ID"],
         "messages": [
             {
                 "type": "text",
