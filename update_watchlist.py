@@ -215,31 +215,7 @@ def build_watchlist():
         reverse=True
     )[:100]
 
-    print("成交額前100已取得，開始尋找量能爆發股...")
-
-    volume_spikes = []
-
-    for i, s in enumerate(all_rows, 1):
-        sid = s["stock_id"]
-        name = s["name"]
-
-        if is_volume_spike(sid):
-            s = dict(s)
-            s["category"] = s["category"] + "+量能爆發"
-            volume_spikes.append(s)
-            print(f"量能爆發：{sid} {name}")
-
-    # 合併：成交額前100 + 量能爆發股，並去除重複
-    merged = {}
-    for s in top100 + volume_spikes:
-        sid = s["stock_id"]
-        if sid not in merged:
-            merged[sid] = s
-        else:
-            merged[sid]["category"] = merged[sid]["category"] + "+量能爆發"
-
-    candidates = list(merged.values())
-
+   
     print("成交額前100已取得，開始過濾 MA20 與雙軌條件...")
 
     candidates = top100
