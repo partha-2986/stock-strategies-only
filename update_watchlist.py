@@ -240,7 +240,9 @@ def build_watchlist():
 
     candidates = list(merged.values())
 
-    print(f"候選股票共 {len(candidates)} 檔，開始過濾 MA20 與 20日漲幅...")
+    print("成交額前100已取得，開始過濾 MA20 與雙軌條件...")
+
+    candidates = top100
 
     result = []
 
