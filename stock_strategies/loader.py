@@ -31,7 +31,7 @@ _PARAM_DEFAULTS: dict = {
     # 基本面
     "eps_threshold": CONFIG["eps_threshold"],
     "roe_threshold": CONFIG["roe_threshold"],
-    "fundamental_pass_required": True,
+    "fundamental_pass_required": False,
     # 回測
     "backtest_years": CONFIG["backtest_years"],
     "hold_days": CONFIG["hold_days"],
@@ -40,8 +40,8 @@ _PARAM_DEFAULTS: dict = {
     "target_return": CONFIG["target_return"],
     "stop_loss": CONFIG["stop_loss"],
     # 評分加權
-    "weight_fundamental": 0.1,
-    "weight_technical": 0.5,
+    "weight_fundamental": 0.0,
+    "weight_technical": 0.6,
     "weight_backtest": 0.4,
     "min_total_score_for_buy": CONFIG["min_total_score_for_buy"],
     "min_tech_score_for_buy": 50,
