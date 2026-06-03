@@ -20,7 +20,7 @@ def send_telegram(text: str):
         "messages": [
             {
                 "type": "text",
-                "text": text[:5000],
+                "text": text[:4500],
             }
         ],
     }
@@ -205,37 +205,40 @@ def format_messages(
     messages.append("\n".join(msg1))
 
     # === 第二則：BUY 詳細 ===
-    msg2 = []
+    msg_buy = []
     if buys:
-        msg2.append(f"🟢 *BUY — 建議進場 ({len(buys)})*")
-        msg2.append("")
+        msg_buy.append(f"🟢 *BUY — 建議進場 ({len(buys)})*")
+        msg_buy.append("")
         for s in buys:
-            msg2.extend(_format_stock_detail(s))
-            msg2.append(f"💡 為何買: {_explain_why(s)}")
-            msg2.append("")
+            msg_buy.extend(_format_stock_detail(s))
+            msg_buy.append(f"💡 為何買: {_explain_why(s)}")
+            msg_buy.append("")
     else:
-        msg2.append("🟢 *BUY: 今日無符合全部條件的標的*")
-        msg2.append("（需基本面+技術面+回測三關全過）")
-        msg2.append("")
+        msg_buy.append("🟢 *BUY: 今日無符合全部條件的標的*")
+        msg_buy.append("")
 
+    messages.append("\n".join(msg_buy))
+
+    # === WATCH 分批發送，每批最多 6 檔 ===
     if watches:
-        top_watches = watches[:8]
-        rest_watches = watches[8:]
-        msg2.append(f"🟡 *WATCH — 接近訊號 TOP {len(top_watches)}*")
-        msg2.append("")
-        for s in top_watches:
-            msg2.extend(_format_stock_detail(s))
-            msg2.append(f"❓ 差在: {_explain_why(s)}")
-            msg2.append("")
+        batch_size = 6
+        for start in range(0, len(watches), batch_size):
+            batch = watches[start:start + batch_size]
+            batch_no = start // batch_size + 1
 
-        if rest_watches:
-            msg2.append(f"📎 *其他觀察 ({len(rest_watches)})*")
-            rest_line = ", ".join(
-                [f"{s['stock_id']}{s['name']}({s['signal_score']})" for s in rest_watches]
+            msg_watch = []
+            msg_watch.append(
+                f"🟡 *WATCH — 觀察名單 第 {batch_no} 則* "
+                f"({start + 1}-{start + len(batch)} / {len(watches)})"
             )
-            msg2.append(rest_line)
-            msg2.append("")
-    messages.append("\n".join(msg2))
+            msg_watch.append("")
+
+            for s in batch:
+                msg_watch.extend(_format_stock_detail(s))
+                msg_watch.append(f"❓ 差在: {_explain_why(s)}")
+                msg_watch.append("")
+
+            messages.append("\n".join(msg_watch))
 
     # === 第三則：操作建議總結 ===
     msg3 = []
